@@ -1,6 +1,7 @@
 services:
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64          # <- clave en M4
     container_name: ufinet-mssql
     environment:
       - ACCEPT_EULA=Y
