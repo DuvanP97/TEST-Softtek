@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, Stack, TextField, Typography, Tooltip, CircularProgress, Alert, Snackbar, Grid } from '@mui/material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, Stack, TextField, Typography, Tooltip, CircularProgress, Alert, Snackbar, Grid, AppBar, Toolbar, Avatar } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import type { Car } from '../api/types'
@@ -9,6 +9,13 @@ import { api } from "../lib/api";
 function CarCard({ car, onEdit, onDelete }: { car: any, onEdit: (c: any)=>void, onDelete: (c: any)=>void }) {
   return (
     <Paper sx={{ p:2 }}>
+      <Box sx={{ width: '100%', height: 180, mb: 2, overflow: 'hidden', borderRadius: 1 }}>
+        <img
+          src={car.image || 'https://www.elcarrocolombiano.com/wp-content/webp-express/webp-images/uploads/2022/07/20220705-10-CARROS-MAS-BARATOS-DE-COLOMBIA-EN-2022-01.jpg.webp'}
+          alt={`${car.brand} ${car.model}`}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      </Box>
       <Stack direction="row" justifyContent="space-between" alignItems="start">
         <Box>
           <Typography fontWeight={600}>{car.brand} {car.model}</Typography>
@@ -28,9 +35,6 @@ function CarCard({ car, onEdit, onDelete }: { car: any, onEdit: (c: any)=>void, 
     </Paper>
   );
 }
-
-// Nota: asumo que Car tiene opcionalmente `id` (number | string).
-// Campos mínimos usados: brand, model, year, plateNumber, color, id?
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -57,7 +61,8 @@ export default function Cars() {
 
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Car | null>(null)
-  const [form, setForm] = useState<Car>({ brand:'', model:'', year:2024, plateNumber:'', color:'' })
+  const [form, setForm] = useState<Car>({ brand:'', model:'', year:2024, plateNumber:'', color:'', image: '' })
+  const [userName, setUserName] = useState<string>('')
 
   async function fetchCars() {
     const token = getToken();
@@ -99,23 +104,33 @@ export default function Cars() {
       setLoading(false);
     }
   }
-  useEffect(() => { load(); }, [])
+  useEffect(() => { 
+    load(); 
+    const token = getToken();
+    if (token) {
+      try {
+        const p = JSON.parse(atob(String(token).split('.')[1]));
+        setUserName(p?.sub || '');
+      } catch {
+        setUserName('');
+      }
+    }
+  }, [])
 
   function openCreate() {
     setEditing(null)
-    setForm({ brand:'', model:'', year:new Date().getFullYear(), plateNumber:'', color:'' } as Car)
+    setForm({ brand:'', model:'', year:new Date().getFullYear(), plateNumber:'', color:'', image: '' } as Car)
     setOpen(true)
   }
   function openEdit(car: Car) {
     setEditing(car)
     const c: any = car as any;
-    setForm({ ...car, plateNumber: (c.plateNumber ?? (c as any).plate), year: car.year } as Car)
+    setForm({ ...car, plateNumber: (c.plateNumber ?? (c as any).plate), year: car.year, image: c.image || '' } as Car)
     setOpen(true)
   }
 
   async function saveCar() {
     try {
-      // validaciones simples
       if (!form.brand || !form.model || !form.plateNumber || !form.color) {
         setError('Todos los campos son obligatorios');
         return;
@@ -158,64 +173,87 @@ export default function Cars() {
     }
   }
 
+  function onLogout() {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+  }
+
   const emptyState = useMemo(() => !loading && cars.length === 0, [loading, cars])
 
   return (
-    <Box p={2}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5">Autos</Typography>
-        <Button variant="contained" onClick={openCreate}>Agregar</Button>
-      </Stack>
-
-      {loading && (
-        <Stack alignItems="center" my={4}>
-          <CircularProgress />
-        </Stack>
-      )}
-
-      {emptyState && (
-        <Paper sx={{ p:2 }}>
-          <Typography color="text.secondary">No hay autos. Crea el primero con el botón "Agregar".</Typography>
-        </Paper>
-      )}
-
-      {!loading && cars.length > 0 && (
-        <Grid container spacing={2}>
-          {cars.map((c) => (
-            <Grid item key={(c as any).id ?? `${c.plateNumber}-${c.model}`} xs={12} sm={6} md={4}>
-              <CarCard car={c} onEdit={openEdit} onDelete={deleteCar} />
-            </Grid>
-          ))}
-        </Grid>
-      )}
-
-      <Dialog open={open} onClose={()=>setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{editing ? 'Editar auto' : 'Agregar auto'}</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} mt={1}>
-            <TextField label="Marca" value={form.brand} onChange={e=>setForm({...form, brand:e.target.value})} />
-            <TextField label="Modelo" value={form.model} onChange={e=>setForm({...form, model:e.target.value})} />
-            <TextField label="Año" type="number" value={form.year} onChange={e=>setForm({...form, year:Number(e.target.value)})} disabled={!!editing} />
-            <TextField label="Placa" value={form.plateNumber} onChange={e=>setForm({...form, plateNumber:e.target.value})} disabled={!!editing} />
-            <TextField label="Color" value={form.color} onChange={e=>setForm({...form, color:e.target.value})} />
+    <>
+      <AppBar position="fixed" sx={{ width: '100%' }}>
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Avatar alt="Logo" src="https://via.placeholder.com/40" />
+            <Typography variant="body1" component="div" sx={{ textAlign: 'right' }}>
+              {userName}
+            </Typography>
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={()=>setOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={saveCar}>{editing ? 'Guardar cambios' : 'Guardar'}</Button>
-        </DialogActions>
-      </Dialog>
+          <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button color="inherit" onClick={onLogout}>Cerrar sesión</Button>
+          </Box>
+        </Toolbar>
+      </AppBar>
+      <br /><br /><br /><br />
+      <Box p={2}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h5">Autos</Typography>
+          <Button variant="contained" onClick={openCreate}>Agregar</Button>
+        </Stack>
 
-      <Snackbar open={!!error} autoHideDuration={4000} onClose={() => setError('')} anchorOrigin={{ vertical:'bottom', horizontal:'center' }}>
-        <Alert severity="error" onClose={() => setError('')} sx={{ width: '100%' }}>
-          {error}
-        </Alert>
-      </Snackbar>
+        {loading && (
+          <Stack alignItems="center" my={4}>
+            <CircularProgress />
+          </Stack>
+        )}
 
-      {/* DEBUG: quita esto en producción */}
-      <Box mt={2} sx={{ display: cars.length === 0 ? 'block' : 'none' }}>
-        <Typography variant="caption" color="text.secondary">Debug: cars vacíos. Revisa la consola para ver la respuesta cruda de /api/cars.</Typography>
+        {emptyState && (
+          <Paper sx={{ p:2 }}>
+            <Typography color="text.secondary">No hay autos. Crea el primero con el botón "Agregar".</Typography>
+          </Paper>
+        )}
+
+        {!loading && cars.length > 0 && (
+          <Grid container spacing={2}>
+            {cars.map((c) => (
+              <Grid item key={(c as any).id ?? `${c.plateNumber}-${c.model}`} xs={12} sm={6} md={4}>
+                <CarCard car={c} onEdit={openEdit} onDelete={deleteCar} />
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        <Dialog open={open} onClose={()=>setOpen(false)} fullWidth maxWidth="sm">
+          <DialogTitle>{editing ? 'Editar auto' : 'Agregar auto'}</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} mt={1}>
+              <TextField label="Marca" value={form.brand} onChange={e=>setForm({...form, brand:e.target.value})} />
+              <TextField label="Modelo" value={form.model} onChange={e=>setForm({...form, model:e.target.value})} />
+              <TextField label="Año" type="number" value={form.year} onChange={e=>setForm({...form, year:Number(e.target.value)})} disabled={!!editing} />
+              <TextField label="Placa" value={form.plateNumber} onChange={e=>setForm({...form, plateNumber:e.target.value})} disabled={!!editing} />
+              <TextField label="Color" value={form.color} onChange={e=>setForm({...form, color:e.target.value})} />
+              <TextField label="Imagen (URL)" value={form.image || ''} onChange={e=>setForm({...form, image:e.target.value})} />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={()=>setOpen(false)}>Cancelar</Button>
+            <Button variant="contained" onClick={saveCar}>{editing ? 'Guardar cambios' : 'Guardar'}</Button>
+          </DialogActions>
+        </Dialog>
+
+        <Snackbar open={!!error} autoHideDuration={4000} onClose={() => setError('')} anchorOrigin={{ vertical:'bottom', horizontal:'center' }}>
+          <Alert severity="error" onClose={() => setError('')} sx={{ width: '100%' }}>
+            {error}
+          </Alert>
+        </Snackbar>
+
+        {/* DEBUG: quita esto en producción */}
+        <Box mt={2} sx={{ display: cars.length === 0 ? 'block' : 'none' }}>
+          <Typography variant="caption" color="text.secondary">Debug: cars vacíos. Revisa la consola para ver la respuesta cruda de /api/cars.</Typography>
+        </Box>
       </Box>
-    </Box>
+    </>
   )
 }
