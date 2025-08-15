@@ -34,7 +34,6 @@ BEGIN
 END;
 GO
 
--- Si la tabla ya existía pero no tiene las columnas, agrégalas
 IF COL_LENGTH('dbo.cars', 'created_at') IS NULL
 BEGIN
   ALTER TABLE dbo.cars 

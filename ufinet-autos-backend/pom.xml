@@ -21,7 +21,6 @@
   </properties>
 
   <dependencies>
-    <!-- Web + JPA + Security (lo activamos luego con JWT) -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
@@ -34,15 +33,11 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
-
-    <!-- Driver SQL Server -->
     <dependency>
       <groupId>com.microsoft.sqlserver</groupId>
       <artifactId>mssql-jdbc</artifactId>
       <version>12.6.1.jre11</version>
     </dependency>
-
-    <!-- JWT (lo cableamos luego) -->
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-api</artifactId>

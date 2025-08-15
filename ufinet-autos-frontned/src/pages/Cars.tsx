@@ -67,7 +67,6 @@ export default function Cars() {
   async function fetchCars() {
     const token = getToken();
     const headers = authHeaders();
-    // Log de depuración para verificar el usuario del token
     try {
       if (token) {
         const p = JSON.parse(atob(String(token).split('.')[1]));
@@ -80,7 +79,6 @@ export default function Cars() {
     const { data } = await api.get('/cars', { headers });
     console.log('[Cars] /api/cars response:', data);
 
-    // Normaliza el nombre de la placa para el front (backend usa `plate`)
     const list = Array.isArray(data) ? data.map((it: any) => ({
       ...it,
       plateNumber: it.plate ?? it.plateNumber,

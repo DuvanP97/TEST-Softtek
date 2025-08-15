@@ -24,7 +24,6 @@ public class CarService {
   }
 
   public CarResponse create(CarRequest req) {
-    // Regla de negocio simple: placa única global
     if (carRepo.existsByPlateIgnoreCase(req.plate())) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "La placa ya existe");
     }
@@ -55,7 +54,6 @@ public class CarService {
     User owner = currentUser();
     Car c = carRepo.findByIdAndOwnerId(id, owner.getId())
                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    // Si cambia la placa, valida unicidad
     if (!c.getPlate().equalsIgnoreCase(req.plate())
         && carRepo.existsByPlateIgnoreCase(req.plate())) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "La placa ya existe");

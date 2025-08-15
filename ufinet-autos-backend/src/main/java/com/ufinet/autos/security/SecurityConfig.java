@@ -59,15 +59,11 @@ public class SecurityConfig {
       .cors(Customizer.withDefaults())
       .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
       .authorizeHttpRequests(auth -> auth
-        // Preflight CORS
         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-        // Healthcheck pública
         .requestMatchers("/api/health").permitAll()
-        // Endpoints de autenticación públicos
         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/signup").permitAll()
         .requestMatchers("/auth/**").permitAll()
         .requestMatchers("/api/auth/**").permitAll()
-        // Resto protegido
         .anyRequest().authenticated()
       );
 

@@ -34,7 +34,7 @@ public class JwtAuthFilter extends GenericFilter {
         User user = userRepo.findByEmail(email).orElse(null);
         if (user != null) {
           var auth = new UsernamePasswordAuthenticationToken(
-              email, null, List.of()  // sin roles por simplicidad
+              email, null, List.of() 
           );
           SecurityContextHolder.getContext().setAuthentication(auth);
         }

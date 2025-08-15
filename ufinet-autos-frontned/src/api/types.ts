@@ -7,4 +7,4 @@ export type Car = {
   color: string
 }
 
-export type AuthResponse = { token: string }  // para cuando cableemos JWT
+export type AuthResponse = { token: string } 

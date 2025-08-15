@@ -16,7 +16,6 @@ public class User {
   @Column(nullable=false, name="full_name")
   private String fullName;
 
-  // getters/setters
   public Long getId(){return id;} public void setId(Long id){this.id=id;}
   public String getEmail(){return email;} public void setEmail(String e){this.email=e;}
   public String getPasswordHash(){return passwordHash;} public void setPasswordHash(String p){this.passwordHash=p;}

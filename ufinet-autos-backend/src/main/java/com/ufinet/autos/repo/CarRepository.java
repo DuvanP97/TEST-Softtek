@@ -1,4 +1,3 @@
-// src/main/java/com/ufinet/autos/repo/CarRepository.java
 package com.ufinet.autos.repo;
 
 import com.ufinet.autos.domain.Car;

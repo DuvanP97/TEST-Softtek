@@ -24,7 +24,7 @@ public class JwtService {
     long now = System.currentTimeMillis();
     return Jwts.builder()
         .setClaims(claims)
-        .setSubject(subject)         // usaremos el email como subject
+        .setSubject(subject)  
         .setIssuedAt(new Date(now))
         .setExpiration(new Date(now + expirationMs))
         .signWith(key, SignatureAlgorithm.HS256)
