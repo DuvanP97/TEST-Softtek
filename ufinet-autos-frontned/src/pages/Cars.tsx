@@ -3,11 +3,23 @@ import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconBut
 import { Grid as Grid } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
-import client from '../api/client'
 import type { Car } from '../api/types'
+
+import { api } from "../lib/api";
 
 // Nota: asumo que Car tiene opcionalmente `id` (number | string).
 // Campos mínimos usados: brand, model, year, plateNumber, color, id?
+
+function getToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem('accessToken') || localStorage.getItem('token');
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
 
 export default function Cars() {
   const [cars, setCars] = useState<Car[]>([])
@@ -18,19 +30,38 @@ export default function Cars() {
   const [editing, setEditing] = useState<Car | null>(null)
   const [form, setForm] = useState<Car>({ brand:'', model:'', year:2024, plateNumber:'', color:'' })
 
+  async function fetchCars() {
+    const token = getToken();
+    console.log('[Cars] fetchCars -> hasToken?', !!token);
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const { data } = await api.get('/cars', { headers });
+
+    // Normaliza el nombre de la placa para el front (backend usa `plate`)
+    const list = Array.isArray(data) ? data.map((it: any) => ({
+      ...it,
+      plateNumber: it.plate ?? it.plateNumber,
+    })) : [];
+    return list;
+  }
+
   async function load() {
     try {
-      setLoading(true)
-      const { data } = await client.get('/api/cars')
-      setCars(data ?? [])
+      setLoading(true);
+      const data = await fetchCars();
+      setCars(Array.isArray(data) ? data : []);
     } catch (e: any) {
-      setError(e?.response?.data?.message || 'No se pudo cargar la lista de autos')
-      setCars([])
+      const status = e?.response?.status;
+      const msg = e?.response?.data?.message;
+      setError(msg || (status ? `Error ${status}: no se pudo cargar la lista de autos` : 'No se pudo cargar la lista de autos'));
+      console.error('[Cars] load error', { status, msg, err: e });
+      setCars([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(); }, [])
 
   function openCreate() {
     setEditing(null)
@@ -39,7 +70,8 @@ export default function Cars() {
   }
   function openEdit(car: Car) {
     setEditing(car)
-    setForm({ ...car })
+    const c: any = car as any;
+    setForm({ ...car, plateNumber: (c.plateNumber ?? (c as any).plate) } as Car)
     setOpen(true)
   }
 
@@ -47,24 +79,22 @@ export default function Cars() {
     try {
       // validaciones simples
       if (!form.brand || !form.model || !form.plateNumber || !form.color) {
-        setError('Todos los campos son obligatorios')
-        return
+        setError('Todos los campos son obligatorios');
+        return;
       }
       if (!form.year || Number(form.year) < 1900) {
-        setError('Año inválido')
-        return
+        setError('Año inválido');
+        return;
       }
 
       if ((editing as any)?.id != null) {
-        const id = (editing as any).id
-        await client.put(`/api/cars/${id}`,[
-          form
-        ][0])
+        const id = (editing as any).id;
+        await api.put(`/cars/${id}`, form);
       } else {
-        await client.post('/api/cars', form)
+        await api.post('/cars', form);
       }
-      setOpen(false)
-      await load()
+      setOpen(false);
+      await load();
     } catch (e: any) {
       setError(e?.response?.data?.message || 'No se pudo guardar el auto')
     }
@@ -77,9 +107,9 @@ export default function Cars() {
         setError('No encuentro el id del auto. Asegúrate que el backend incluya `id` en la respuesta de /api/cars.')
         return
       }
-      const ok = window.confirm(`¿Eliminar ${car.brand} ${car.model} - ${car.plateNumber}?`)
+      const ok = window.confirm(`¿Eliminar ${car.brand} ${car.model} - ${(car as any).plateNumber ?? (car as any).plate}?`)
       if (!ok) return
-      await client.delete(`/api/cars/${id}`)
+      await api.delete(`/cars/${id}`);
       await load()
     } catch (e: any) {
       setError(e?.response?.data?.message || 'No se pudo eliminar el auto')
@@ -116,7 +146,7 @@ export default function Cars() {
                   <Box>
                     <Typography fontWeight={600}>{c.brand} {c.model}</Typography>
                     <Typography variant="body2" color="text.secondary">Año: {c.year}</Typography>
-                    <Typography variant="body2" color="text.secondary">Placa: {c.plateNumber}</Typography>
+                    <Typography variant="body2" color="text.secondary">Placa: {(c as any).plateNumber ?? (c as any).plate}</Typography>
                     <Typography variant="body2" color="text.secondary">Color: {c.color}</Typography>
                   </Box>
                   <Stack direction="row" spacing={1}>

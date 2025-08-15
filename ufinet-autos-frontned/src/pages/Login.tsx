@@ -13,7 +13,8 @@ import Stack from '@mui/material/Stack';
 import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
+import { Link as RouterLink } from 'react-router-dom';
+import { api } from '../lib/api';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -85,21 +86,23 @@ export default function Login(props: { disableCustomTheme?: boolean }) {
     const isValid = validateInputs();
     if (!isValid) return;
 
-    const form = new FormData(event.currentTarget);
-    const emailValue = (form.get('email') as string) ?? '';
-    const passwordValue = (form.get('password') as string) ?? '';
-
     try {
       setLoading(true);
-      setLoading(true);
       const { data } = await api.post('/auth/login', {
-        email: emailValue,
-        password: passwordValue,
+        email: email.trim(),
+        password: password,
       });
-      localStorage.setItem('token', data.token);
+      const token = data?.token ?? data?.accessToken;
+      if (!token) {
+        throw new Error('No se recibió token del servidor');
+      }
+      localStorage.setItem('token', token);
       navigate('/cars');
     } catch (e: any) {
-      setError(e.message || 'Error de autenticación');
+      const msg = e?.response?.status === 401
+        ? 'Credenciales inválidas'
+        : (e?.response?.data?.message || e?.message || 'Error de autenticación');
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -195,7 +198,7 @@ export default function Login(props: { disableCustomTheme?: boolean }) {
               label="Remember me"
             />
             <Button type="submit" fullWidth variant="contained" disabled={loading}>
-              {loading ? 'Entrando…' : 'Sign in'}
+              {loading ? 'Ingresando…' : 'Iniciar sesión'}
             </Button>
           </Box>
           <Divider>or</Divider>
@@ -203,7 +206,8 @@ export default function Login(props: { disableCustomTheme?: boolean }) {
             <Typography sx={{ textAlign: 'center' }}>
               Don&apos;t have an account?{' '}
               <Link
-                href="/signup"
+                component={RouterLink}
+                to="/signup"
                 variant="body2"
                 sx={{ alignSelf: 'center' }}
               >

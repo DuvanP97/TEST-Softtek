@@ -11,7 +11,7 @@ import Stack from '@mui/material/Stack';
 import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
+import { api } from '../lib/api';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -71,7 +71,7 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
   const validateInputs = () => {
     const email = document.getElementById('email') as HTMLInputElement;
     const password = document.getElementById('password') as HTMLInputElement;
-    const name = document.getElementById('name') as HTMLInputElement;
+    const name = document.getElementById('fullName') as HTMLInputElement;
 
     let isValid = true;
 
@@ -114,17 +114,17 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
     if (!isValid) return;
 
     const data = new FormData(event.currentTarget);
-    const fullName = (data.get('name') as string) ?? '';
+    const fullName = (data.get('fullName') as string) ?? '';
     const email = (data.get('email') as string) ?? '';
     const password = (data.get('password') as string) ?? '';
 
     try {
       setLoading(true);
-      await api.post('/auth/signup', { fullName, email, password });
+      await api.post('/auth/register', { fullName, email, password });
       setSuccessMsg('Usuario creado. Ahora puedes iniciar sesión.');
       setTimeout(() => navigate('/login'), 800);
     } catch (e: any) {
-      setBackendError(e.message || 'No se pudo registrar');
+      setBackendError(e?.response?.data?.message || e?.message || 'No se pudo registrar');
     } finally {
       setLoading(false);
     }
@@ -147,13 +147,13 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
             sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
           >
             <FormControl>
-              <FormLabel htmlFor="name">Full name</FormLabel>
+              <FormLabel htmlFor="fullName">Full name</FormLabel>
               <TextField
-                autoComplete="name"
-                name="name"
+                autoComplete="fullName"
+                name="fullName"
                 required
                 fullWidth
-                id="name"
+                id="fullName"
                 placeholder="Jon Snow"
                 error={nameError}
                 helperText={nameErrorMessage}
@@ -193,7 +193,7 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
             </FormControl>
             {successMsg && <Typography color="success.main" variant="body2">{successMsg}</Typography>}
             {backendError && <Typography color="error" variant="body2">{backendError}</Typography>}
-            <Button type="submit" fullWidth variant="contained" onClick={validateInputs} disabled={loading}>
+            <Button type="submit" fullWidth variant="contained" disabled={loading}>
               {loading ? 'Creando…' : 'Sign up'}
             </Button>
           </Box>
