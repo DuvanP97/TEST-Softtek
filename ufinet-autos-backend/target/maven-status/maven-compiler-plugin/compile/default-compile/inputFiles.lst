@@ -2,7 +2,12 @@
 /Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/api/AuthController.java
 /Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/api/CarController.java
 /Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/api/HealthController.java
+/Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/api/dto/AuthDtos.java
 /Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/domain/Car.java
 /Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/domain/User.java
 /Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/repo/CarRepository.java
 /Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/repo/UserRepository.java
+/Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/security/JwtAuthFilter.java
+/Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/security/JwtService.java
+/Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/security/SecurityConfig.java
+/Users/duvanpedroza/Documents/Work/ESAP/TEST-Softtek/ufinet-autos-backend/src/main/java/com/ufinet/autos/service/AuthService.java
