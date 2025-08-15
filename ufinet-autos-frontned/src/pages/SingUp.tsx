@@ -10,6 +10,9 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
+
+const API = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:8080';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -61,6 +64,11 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
   const [nameError, setNameError] = React.useState(false);
   const [nameErrorMessage, setNameErrorMessage] = React.useState('');
 
+  const [loading, setLoading] = React.useState(false);
+  const [backendError, setBackendError] = React.useState('');
+  const [successMsg, setSuccessMsg] = React.useState('');
+  const navigate = useNavigate();
+
   const validateInputs = () => {
     const email = document.getElementById('email') as HTMLInputElement;
     const password = document.getElementById('password') as HTMLInputElement;
@@ -98,18 +106,37 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
     return isValid;
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    if (nameError || emailError || passwordError) {
-      event.preventDefault();
-      return;
-    }
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setBackendError('');
+    setSuccessMsg('');
+
+    const isValid = validateInputs();
+    if (!isValid) return;
+
     const data = new FormData(event.currentTarget);
-    console.log({
-      name: data.get('name'),
-      lastName: data.get('lastName'),
-      email: data.get('email'),
-      password: data.get('password'),
-    });
+    const fullName = (data.get('name') as string) ?? '';
+    const email = (data.get('email') as string) ?? '';
+    const password = (data.get('password') as string) ?? '';
+
+    try {
+      setLoading(true);
+      const res = await fetch(`${API}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName, email, password }),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || 'No se pudo registrar');
+      }
+      setSuccessMsg('Usuario creado. Ahora puedes iniciar sesión.');
+      setTimeout(() => navigate('/login'), 800);
+    } catch (e: any) {
+      setBackendError(e.message || 'No se pudo registrar');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -173,13 +200,10 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
                 color={passwordError ? 'error' : 'primary'}
               />
             </FormControl>
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              onClick={validateInputs}
-            >
-              Sign up
+            {successMsg && <Typography color="success.main" variant="body2">{successMsg}</Typography>}
+            {backendError && <Typography color="error" variant="body2">{backendError}</Typography>}
+            <Button type="submit" fullWidth variant="contained" onClick={validateInputs} disabled={loading}>
+              {loading ? 'Creando…' : 'Sign up'}
             </Button>
           </Box>
           <Divider>

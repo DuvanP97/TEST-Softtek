@@ -12,6 +12,9 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
+
+const API = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:8080';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -62,28 +65,12 @@ export default function Login(props: { disableCustomTheme?: boolean }) {
   const [passwordError, setPasswordError] = React.useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
   const [open, setOpen] = React.useState(false);
-  // const [email, setEmail] = useState('')
-  // const [password, setPassword] = useState('')
-  // const [loading, setLoading] = useState(false)
-  // const [error, setError] = useState('')
-  // const navigate = useNavigate()
 
-  // async function handleSubmit(e: React.FormEvent) {
-  //   e.preventDefault()
-  //   setError('')
-  //   setLoading(true)
-  //   try {
-  //     // TODO: reemplazar por:
-  //     // const { data } = await client.post('/api/auth/login', { email, password })
-  //     // localStorage.setItem('token', data.token)
-  //     localStorage.setItem('token', 'dev-token')
-  //     navigate('/cars')
-  //   } catch (err: any) {
-  //     setError(err?.response?.data?.message ?? 'Error de autenticación')
-  //   } finally {
-  //     setLoading(false)
-  //   }
-  // }
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const navigate = useNavigate();
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -93,25 +80,44 @@ export default function Login(props: { disableCustomTheme?: boolean }) {
     setOpen(false);
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    if (emailError || passwordError) {
-      event.preventDefault();
-      return;
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError('');
+    const isValid = validateInputs();
+    if (!isValid) return;
+
+    const form = new FormData(event.currentTarget);
+    const emailValue = (form.get('email') as string) ?? '';
+    const passwordValue = (form.get('password') as string) ?? '';
+
+    try {
+      setLoading(true);
+      const res = await fetch(`${API}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailValue, password: passwordValue }),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || 'Credenciales inválidas');
+      }
+      const data = await res.json();
+      localStorage.setItem('token', data.token);
+      navigate('/cars');
+    } catch (e: any) {
+      setError(e.message || 'Error de autenticación');
+    } finally {
+      setLoading(false);
     }
-    const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get('email'),
-      password: data.get('password'),
-    });
   };
 
   const validateInputs = () => {
-    const email = document.getElementById('email') as HTMLInputElement;
-    const password = document.getElementById('password') as HTMLInputElement;
+    const emailInput = document.getElementById('email') as HTMLInputElement;
+    const passwordInput = document.getElementById('password') as HTMLInputElement;
 
     let isValid = true;
 
-    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
+    if (!emailInput.value || !/\S+@\S+\.\S+/.test(emailInput.value)) {
       setEmailError(true);
       setEmailErrorMessage('Please enter a valid email address.');
       isValid = false;
@@ -120,7 +126,7 @@ export default function Login(props: { disableCustomTheme?: boolean }) {
       setEmailErrorMessage('');
     }
 
-    if (!password.value || password.value.length < 6) {
+    if (!passwordInput.value || passwordInput.value.length < 6) {
       setPasswordError(true);
       setPasswordErrorMessage('Password must be at least 6 characters long.');
       isValid = false;
@@ -165,6 +171,8 @@ export default function Login(props: { disableCustomTheme?: boolean }) {
                 fullWidth
                 variant="outlined"
                 color={emailError ? 'error' : 'primary'}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </FormControl>
             <FormControl>
@@ -177,24 +185,23 @@ export default function Login(props: { disableCustomTheme?: boolean }) {
                 type="password"
                 id="password"
                 autoComplete="current-password"
-                autoFocus
                 required
                 fullWidth
                 variant="outlined"
                 color={passwordError ? 'error' : 'primary'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </FormControl>
+            {error && (
+              <Typography color="error" variant="body2">{error}</Typography>
+            )}
             <FormControlLabel
               control={<Checkbox value="remember" color="primary" />}
               label="Remember me"
             />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              onClick={validateInputs}
-            >
-              Sign in
+            <Button type="submit" fullWidth variant="contained" disabled={loading}>
+              {loading ? 'Entrando…' : 'Sign in'}
             </Button>
           </Box>
           <Divider>or</Divider>
