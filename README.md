@@ -37,9 +37,11 @@ docker logs -f ufinet-mssql
 Esperar hasta ver en los logs:
 
 SQL Server is now ready for client connections.
+```
 
-1.3 Cargar esquema y datos iniciales
+### 1.3 Cargar esquema y datos iniciales
 
+```bash
 docker cp schema.sql ufinet-mssql:/tmp/schema.sql
 docker cp data.sql   ufinet-mssql:/tmp/data.sql
 docker exec -it ufinet-mssql /opt/mssql-tools18/bin/sqlcmd \
@@ -47,13 +49,17 @@ docker exec -it ufinet-mssql /opt/mssql-tools18/bin/sqlcmd \
 docker exec -it ufinet-mssql /opt/mssql-tools18/bin/sqlcmd \
   -S localhost -U sa -P 'YourStrong!Passw0rd' -C -i /tmp/data.sql
 
-1.4 Probar conexión
+```
+### 1.4 Probar conexión
 
+```bash
 docker exec -it ufinet-mssql /opt/mssql-tools18/bin/sqlcmd \
   -S localhost -U sa -P 'YourStrong!Passw0rd' -C -Q "SELECT 1"
 
-  2️⃣ Backend (Spring Boot)
+```
+## 2️⃣ Backend (Spring Boot)
 
+```bash
 spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=autosdb;encrypt=false;trustServerCertificate=true
 spring.datasource.username=sa
 spring.datasource.password=YourStrong!Passw0rd
@@ -62,8 +68,10 @@ spring.sql.init.mode=always
 spring.sql.init.platform=sqlserver
 spring.jpa.show-sql=true
 
-2.2 Compilar y ejecutar
+```
+### 2.2 Compilar y ejecutar
 
+```bash
 cd backend
 mvn clean install
 mvn spring-boot:run
@@ -76,11 +84,13 @@ TEST:
 GET http://localhost:8080/api/health
 → {"status":"OK"}
 
+```
 
-3️⃣ Frontend (React + TypeScript + Material UI)
+## 3️⃣ Frontend (React + TypeScript + Material UI)
 
-3.1 Crear el proyecto
+### 3.1 Crear el proyecto
 
+```bash
 cd ..
 mkdir frontend
 cd frontend
@@ -88,14 +98,18 @@ npm create vite@latest . -- --template react-ts
 npm install
 npm install @mui/material @mui/icons-material @emotion/react @emotion/styled react-router-dom axios
 
-3.2 Configurar proxy en vite.config.ts
+```
+### 3.2 Configurar proxy en vite.config.ts
 
+```bash
 server: {
   proxy: {
     '/api': 'http://localhost:8080'
   }
 }
 
-3.3 Ejecutar
+```
+### 3.3 Ejecutar
 
+```bash
 npm run dev
