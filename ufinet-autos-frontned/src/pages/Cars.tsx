@@ -1,11 +1,33 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, Stack, TextField, Typography, Tooltip, CircularProgress, Alert, Snackbar } from '@mui/material'
-import { Grid as Grid } from '@mui/material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, Stack, TextField, Typography, Tooltip, CircularProgress, Alert, Snackbar, Grid } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import type { Car } from '../api/types'
 
 import { api } from "../lib/api";
+
+function CarCard({ car, onEdit, onDelete }: { car: any, onEdit: (c: any)=>void, onDelete: (c: any)=>void }) {
+  return (
+    <Paper sx={{ p:2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="start">
+        <Box>
+          <Typography fontWeight={600}>{car.brand} {car.model}</Typography>
+          <Typography variant="body2" color="text.secondary">Año: {car.year}</Typography>
+          <Typography variant="body2" color="text.secondary">Placa: {car.plateNumber ?? car.plate}</Typography>
+          <Typography variant="body2" color="text.secondary">Color: {car.color}</Typography>
+        </Box>
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="Editar">
+            <IconButton size="small" onClick={() => onEdit(car)}><EditIcon fontSize="small"/></IconButton>
+          </Tooltip>
+          <Tooltip title="Eliminar">
+            <IconButton size="small" onClick={() => onDelete(car)}><DeleteIcon fontSize="small"/></IconButton>
+          </Tooltip>
+        </Stack>
+      </Stack>
+    </Paper>
+  );
+}
 
 // Nota: asumo que Car tiene opcionalmente `id` (number | string).
 // Campos mínimos usados: brand, model, year, plateNumber, color, id?
@@ -21,6 +43,13 @@ function getToken(): string | null {
   }
 }
 
+function authHeaders(): Record<string, string> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 export default function Cars() {
   const [cars, setCars] = useState<Car[]>([])
   const [loading, setLoading] = useState<boolean>(false)
@@ -32,11 +61,19 @@ export default function Cars() {
 
   async function fetchCars() {
     const token = getToken();
-    console.log('[Cars] fetchCars -> hasToken?', !!token);
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const headers = authHeaders();
+    // Log de depuración para verificar el usuario del token
+    try {
+      if (token) {
+        const p = JSON.parse(atob(String(token).split('.')[1]));
+        console.log('[Cars] usando token de:', p?.sub, p?.userId);
+      } else {
+        console.log('[Cars] sin token (petición pública)');
+      }
+    } catch {}
 
     const { data } = await api.get('/cars', { headers });
+    console.log('[Cars] /api/cars response:', data);
 
     // Normaliza el nombre de la placa para el front (backend usa `plate`)
     const list = Array.isArray(data) ? data.map((it: any) => ({
@@ -50,6 +87,7 @@ export default function Cars() {
     try {
       setLoading(true);
       const data = await fetchCars();
+      console.log('[Cars] normalized length:', Array.isArray(data) ? data.length : 'not-array');
       setCars(Array.isArray(data) ? data : []);
     } catch (e: any) {
       const status = e?.response?.status;
@@ -71,7 +109,7 @@ export default function Cars() {
   function openEdit(car: Car) {
     setEditing(car)
     const c: any = car as any;
-    setForm({ ...car, plateNumber: (c.plateNumber ?? (c as any).plate) } as Car)
+    setForm({ ...car, plateNumber: (c.plateNumber ?? (c as any).plate), year: car.year } as Car)
     setOpen(true)
   }
 
@@ -89,9 +127,13 @@ export default function Cars() {
 
       if ((editing as any)?.id != null) {
         const id = (editing as any).id;
-        await api.put(`/cars/${id}`, form);
+        const payload = { ...form, plate: form.plateNumber } as any;
+        delete (payload as any).plateNumber;
+        await api.put(`/cars/${id}`, payload, { headers: authHeaders() });
       } else {
-        await api.post('/cars', form);
+        const payload = { ...form, plate: form.plateNumber } as any;
+        delete (payload as any).plateNumber;
+        await api.post('/cars', payload, { headers: authHeaders() });
       }
       setOpen(false);
       await load();
@@ -109,7 +151,7 @@ export default function Cars() {
       }
       const ok = window.confirm(`¿Eliminar ${car.brand} ${car.model} - ${(car as any).plateNumber ?? (car as any).plate}?`)
       if (!ok) return
-      await api.delete(`/cars/${id}`);
+      await api.delete(`/cars/${id}`, { headers: authHeaders() });
       await load()
     } catch (e: any) {
       setError(e?.response?.data?.message || 'No se pudo eliminar el auto')
@@ -140,25 +182,8 @@ export default function Cars() {
       {!loading && cars.length > 0 && (
         <Grid container spacing={2}>
           {cars.map((c) => (
-            <Grid key={(c as any).id ?? `${c.plateNumber}-${c.model}`} size={{ xs:12, sm:6, md:4 }}>
-              <Paper sx={{ p:2 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="start">
-                  <Box>
-                    <Typography fontWeight={600}>{c.brand} {c.model}</Typography>
-                    <Typography variant="body2" color="text.secondary">Año: {c.year}</Typography>
-                    <Typography variant="body2" color="text.secondary">Placa: {(c as any).plateNumber ?? (c as any).plate}</Typography>
-                    <Typography variant="body2" color="text.secondary">Color: {c.color}</Typography>
-                  </Box>
-                  <Stack direction="row" spacing={1}>
-                    <Tooltip title="Editar">
-                      <IconButton size="small" onClick={() => openEdit(c)}><EditIcon fontSize="small"/></IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar">
-                      <IconButton size="small" onClick={() => deleteCar(c)}><DeleteIcon fontSize="small"/></IconButton>
-                    </Tooltip>
-                  </Stack>
-                </Stack>
-              </Paper>
+            <Grid item key={(c as any).id ?? `${c.plateNumber}-${c.model}`} xs={12} sm={6} md={4}>
+              <CarCard car={c} onEdit={openEdit} onDelete={deleteCar} />
             </Grid>
           ))}
         </Grid>
@@ -170,8 +195,8 @@ export default function Cars() {
           <Stack spacing={2} mt={1}>
             <TextField label="Marca" value={form.brand} onChange={e=>setForm({...form, brand:e.target.value})} />
             <TextField label="Modelo" value={form.model} onChange={e=>setForm({...form, model:e.target.value})} />
-            <TextField label="Año" type="number" value={form.year} onChange={e=>setForm({...form, year:Number(e.target.value)})} />
-            <TextField label="Placa" value={form.plateNumber} onChange={e=>setForm({...form, plateNumber:e.target.value})} />
+            <TextField label="Año" type="number" value={form.year} onChange={e=>setForm({...form, year:Number(e.target.value)})} disabled={!!editing} />
+            <TextField label="Placa" value={form.plateNumber} onChange={e=>setForm({...form, plateNumber:e.target.value})} disabled={!!editing} />
             <TextField label="Color" value={form.color} onChange={e=>setForm({...form, color:e.target.value})} />
           </Stack>
         </DialogContent>
@@ -186,6 +211,11 @@ export default function Cars() {
           {error}
         </Alert>
       </Snackbar>
+
+      {/* DEBUG: quita esto en producción */}
+      <Box mt={2} sx={{ display: cars.length === 0 ? 'block' : 'none' }}>
+        <Typography variant="caption" color="text.secondary">Debug: cars vacíos. Revisa la consola para ver la respuesta cruda de /api/cars.</Typography>
+      </Box>
     </Box>
   )
 }
