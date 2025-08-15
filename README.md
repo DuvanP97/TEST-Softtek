@@ -113,3 +113,7 @@ server: {
 
 ```bash
 npm run dev
+
+```
+
+Desarrollado en una Mac-M4 Duvan Pedroza
