@@ -2,9 +2,12 @@ com/ufinet/autos/repo/CarRepository.class
 com/ufinet/autos/UfinetAutosApplication.class
 com/ufinet/autos/service/AuthService.class
 com/ufinet/autos/security/JwtAuthFilter.class
+com/ufinet/autos/dto/CarResponse.class
 com/ufinet/autos/api/dto/AuthDtos$SignupRequest.class
+com/ufinet/autos/dto/CarRequest.class
 com/ufinet/autos/api/dto/AuthDtos.class
 com/ufinet/autos/api/HealthController.class
+com/ufinet/autos/service/CarService.class
 com/ufinet/autos/security/SecurityConfig.class
 com/ufinet/autos/api/CarController.class
 com/ufinet/autos/repo/UserRepository.class

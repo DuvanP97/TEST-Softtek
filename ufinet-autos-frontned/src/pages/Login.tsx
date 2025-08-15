@@ -13,8 +13,7 @@ import Stack from '@mui/material/Stack';
 import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-
-const API = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:8080';
+import api from '../api';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -92,16 +91,11 @@ export default function Login(props: { disableCustomTheme?: boolean }) {
 
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailValue, password: passwordValue }),
+      setLoading(true);
+      const { data } = await api.post('/auth/login', {
+        email: emailValue,
+        password: passwordValue,
       });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || 'Credenciales inválidas');
-      }
-      const data = await res.json();
       localStorage.setItem('token', data.token);
       navigate('/cars');
     } catch (e: any) {

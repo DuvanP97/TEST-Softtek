@@ -11,8 +11,7 @@ import Stack from '@mui/material/Stack';
 import MuiCard from '@mui/material/Card';
 import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-
-const API = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:8080';
+import api from '../api';
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: 'flex',
@@ -121,15 +120,7 @@ export default function SignUp(props: { disableCustomTheme?: boolean }) {
 
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName, email, password }),
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || 'No se pudo registrar');
-      }
+      await api.post('/auth/signup', { fullName, email, password });
       setSuccessMsg('Usuario creado. Ahora puedes iniciar sesión.');
       setTimeout(() => navigate('/login'), 800);
     } catch (e: any) {
